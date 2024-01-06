@@ -12,7 +12,7 @@ function draw(name: string, notes: number[], k: number,
         return (calcPos(f) + calcPos(f - 1)) / 2;
     }
 
-    const LEFT = 20;
+    const LEFT = 25;
     const TOP = 40;
 
     const noteName: string[][] = [
@@ -49,15 +49,16 @@ function draw(name: string, notes: number[], k: number,
     const offset = 4 + 24 - k; // E
     for (let i = 0; i < stringCount; i++) {
         const str = i + (stringCount < 6 ? 1 : 0);
-        for (let pos = 1; pos <= 24; pos++) {
+        for (let pos = 0; pos <= 24; pos++) {
             const noteNum = (tune[str] + pos + offset) % 12;
             const flag = notes[noteNum];
             if (flag == 0) continue;
+            const x = calcCenter(pos) + LEFT + (pos == 0 ? 16 : 0);
             if (note) {
-                ctx.fillText(noteName[chord ? 1 : 0][noteNum], calcCenter(pos) + LEFT - 3, TOP+ 5 + i * 20);
+                ctx.fillText(noteName[chord ? 1 : 0][noteNum], x - 3, TOP+ 5 + i * 20);
             } else {
                 ctx.beginPath();
-                ctx.arc(calcCenter(pos) + LEFT, TOP + i * 20, 7, 0, Math.PI * 2, true);
+                ctx.arc(x, TOP + i * 20, 7, 0, Math.PI * 2, true);
                 switch (flag) {
                     case 1:
                         ctx.fillStyle = "black";

@@ -1,3 +1,7 @@
+/**
+ Guitar Scale Generator
+ 2023 Naoki Kishida
+ */
 function draw(name, notes, k, stringCount, tune, note, chord) {
     function calcPos(f) {
         return f * (55 - f / 1.7);
@@ -5,7 +9,7 @@ function draw(name, notes, k, stringCount, tune, note, chord) {
     function calcCenter(f) {
         return (calcPos(f) + calcPos(f - 1)) / 2;
     }
-    const LEFT = 20;
+    const LEFT = 25;
     const TOP = 40;
     const noteName = [
         ["T", "2♭", "2", "3♭", "3", "4", "4♯", "5", "6♭", "6", "7♭", "7"],
@@ -34,31 +38,32 @@ function draw(name, notes, k, stringCount, tune, note, chord) {
     for (let p of marks) {
         ctx.fillText(p.toString(), calcCenter(p) + LEFT - 5, TOP + (stringCount - 1) * 20 + 30);
     }
-    const offset = 4 + 24 - k;
+    const offset = 4 + 24 - k; // E
     for (let i = 0; i < stringCount; i++) {
         const str = i + (stringCount < 6 ? 1 : 0);
-        for (let pos = 1; pos <= 24; pos++) {
+        for (let pos = 0; pos <= 24; pos++) {
             const noteNum = (tune[str] + pos + offset) % 12;
             const flag = notes[noteNum];
             if (flag == 0)
                 continue;
+            const x = calcCenter(pos) + LEFT + (pos == 0 ? 16 : 0);
             if (note) {
-                ctx.fillText(noteName[chord ? 1 : 0][noteNum], calcCenter(pos) + LEFT - 3, TOP + 5 + i * 20);
+                ctx.fillText(noteName[chord ? 1 : 0][noteNum], x - 3, TOP + 5 + i * 20);
             }
             else {
                 ctx.beginPath();
-                ctx.arc(calcCenter(pos) + LEFT, TOP + i * 20, 7, 0, Math.PI * 2, true);
+                ctx.arc(x, TOP + i * 20, 7, 0, Math.PI * 2, true);
                 switch (flag) {
                     case 1:
                         ctx.fillStyle = "black";
                         ctx.fill();
                         break;
-                    case 2:
+                    case 2: // root
                         ctx.fillStyle = "white";
                         ctx.fill();
                         ctx.stroke();
                         break;
-                    case 3:
+                    case 3: // blue note
                         ctx.fillStyle = "blue";
                         ctx.fill();
                         break;
@@ -114,6 +119,7 @@ function findNext(key, scale) {
     contain.innerHTML = "";
     const scaleNote = scales[scale][1];
     if (scales[scale][2]) {
+        //scale
         scaleHeader.textContent = "Scale next to";
         chordHeader.textContent = "Chord contained";
         OUTER: for (const [idx, [name, nextScale, isScale]] of scales.entries()) {
@@ -146,6 +152,7 @@ function findNext(key, scale) {
         }
     }
     else {
+        // chord
         scaleHeader.textContent = "Scale contains";
         chordHeader.textContent = "";
         OUTER: for (const [idx, [name, nextScale, isScale]] of scales.entries()) {
@@ -211,10 +218,12 @@ function drawKey(notes, k) {
     const keyWidth = width / keys;
     const offset = 3;
     const keyMap = [0, 1, 2, 3, 4, -1, 5, 6, 7, 8, 9, 10, 11, -1];
+    // draw white keys
     ctx.fillStyle = "white";
     for (let i = 0; i < keys; i++) {
         ctx.fillRect(i * keyWidth + 1, 0, keyWidth - 2, height - 2);
     }
+    // draw black keys
     ctx.fillStyle = "black";
     const gap = 5;
     for (let i = 0; i < keys; i++) {
