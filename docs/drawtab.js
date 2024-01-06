@@ -175,12 +175,12 @@ function findNext(key, scale) {
 const scale = document.getElementById("scale");
 function scaleSelection(mode, adv) {
     scale.innerHTML = "";
-    for (const [idx, [val, , sc, ad]] of scales.entries()) {
+    for (const [idx, [val, , sc, basic]] of scales.entries()) {
         if (mode != 2) {
             if (mode == 0 !== sc)
                 continue;
         }
-        if (!adv && !ad)
+        if (!adv && !basic)
             continue;
         const opt = document.createElement("option");
         opt.value = idx.toString();
@@ -275,11 +275,6 @@ function repaint() {
     draw(keys[k] + " " + scales[s][0], scales[s][1], k, sn, tunes[t][1], n, !scales[s][2]);
     drawKey(scales[s][1], k);
 }
-key.onchange = repaint;
-scale.onchange = repaint;
-strings.onchange = repaint;
-tune.onchange = repaint;
-note.onchange = repaint;
 const advanced = document.getElementById("advanced");
 const types = [
     document.getElementById("t0"),
@@ -297,6 +292,11 @@ function changeMode() {
     scaleSelection(idx, advanced.checked);
     repaint();
 }
+key.onchange = repaint;
+scale.onchange = repaint;
+strings.onchange = repaint;
+tune.onchange = repaint;
+note.onchange = repaint;
 advanced.onchange = changeMode;
 types.forEach(elm => elm.onchange = changeMode);
 changeMode();
