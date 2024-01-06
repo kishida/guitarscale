@@ -22,17 +22,20 @@ function draw(name: string, notes: number[], k: number,
 
     const canvas = document.getElementById("canv") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
+    const bottom = TOP + (stringCount - 1) * 20;
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     for (let i = 0; i < stringCount; i++) {
-        ctx.moveTo(LEFT, TOP + i * 20);
+        ctx.moveTo(LEFT - 4, TOP + i * 20);
         ctx.lineTo(LEFT + calcPos(24), TOP + i * 20);
     }
     for (let i = 0; i <= 24; i++) {
         ctx.moveTo(LEFT + calcPos(i), TOP + 0 * 20);
-        ctx.lineTo(LEFT + calcPos(i), TOP + (stringCount - 1) * 20);
+        ctx.lineTo(LEFT + calcPos(i), bottom);
     }
+    ctx.moveTo(LEFT - 4, TOP);
+    ctx.lineTo(LEFT - 4, bottom);
     ctx.closePath();
     ctx.stroke();
 
@@ -43,7 +46,7 @@ function draw(name: string, notes: number[], k: number,
     const marks: number[] = [3, 5, 7, 9, 12, 15, 17, 19, 21];
     ctx.font = "13pt Arial";
     for (let p of marks) {
-        ctx.fillText(p.toString(), calcCenter(p) + LEFT - 5, TOP + (stringCount - 1) * 20 + 30);
+        ctx.fillText(p.toString(), calcCenter(p) + LEFT - 5, bottom + 30);
     }
 
     const offset = 4 + 24 - k; // E
@@ -53,7 +56,7 @@ function draw(name: string, notes: number[], k: number,
             const noteNum = (tune[str] + pos + offset) % 12;
             const flag = notes[noteNum];
             if (flag == 0) continue;
-            const x = calcCenter(pos) + LEFT + (pos == 0 ? 16 : 0);
+            const x = calcCenter(pos) + LEFT + (pos == 0 ? 14 : 0);
             if (note) {
                 ctx.fillText(noteName[chord ? 1 : 0][noteNum], x - 3, TOP+ 5 + i * 20);
             } else {
