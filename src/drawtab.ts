@@ -184,6 +184,7 @@ function findNext(key: string, scale: number) {
 
 const scale = document.getElementById("scale") as HTMLSelectElement;
 function scaleSelection(mode: number, adv: boolean) {
+    const sel = scale.value;
     scale.innerHTML = "";
     for (const [idx, [val, ,sc, basic]] of scales.entries()) {
         if (mode != 2) {
@@ -193,6 +194,7 @@ function scaleSelection(mode: number, adv: boolean) {
         const opt = document.createElement("option") as HTMLOptionElement;
         opt.value = idx.toString();
         opt.text = val;
+        if (idx.toString() === sel) opt.selected = true;
         scale.appendChild(opt);
     }
 }
