@@ -3,7 +3,7 @@
  Guitar Scale Generator
  2023 Naoki Kishida
  -->
-<html>
+<html lang="en">
     <head>
         <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNZMM47HHQ"></script>
@@ -14,7 +14,7 @@
 
           gtag('config', 'G-MNZMM47HHQ');
         </script>
-        
+
         <title>Guitar Scale</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,45 +24,43 @@
         <meta property="og:url" content="https://kishida.github.io/guitarscale/"/>
         <meta name="twitter:card" content="summary_large_image"/>
         <meta name="twitter:site" content="@kis"/>
-        
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <h1>Guitar Scale Generator</h1>
 
-        <div>
+        <div class="controls">
             <label><input type="radio" name="type" id="t0" checked>Scale</label>
             <label><input type="radio" name="type" id="t1">Chord</label>
             <label><input type="radio" name="type" id="t2">All</label>
             <label><input type="checkbox" value="1" id="advanced">Advanced</label>
         </div>
-        <div>
+        <div class="controls">
             <select id="key"></select>
             <select id="scale"></select>
         </div>
-        <div>
+        <div class="controls">
             <select id="strings"></select>
             <select id="tune"></select>
             <label><input id="note" type="checkbox" value="1">Note</label>
         </div>
-        <div style="margin: 20px 10px">
-        <canvas id="canv" width="1050" height="250"></canvas>
+        <div class="fretboard">
+            <canvas id="canv" width="1050" height="250"></canvas>
         </div>
-        <div>
-            <table style="width: 1100px"><tr><td style="width: 25%; vertical-align: top">
+        <div class="info-section">
+            <div>
                 <h2 id="scale-next">Scale next to</h2>
-                <div id="next">
-
-                </div>
-            </td><td style="width: 25%; vertical-align: top">
+                <div id="next"></div>
+            </div>
+            <div>
                 <h2 id="chord-contained">Chord contained</h2>
-                <div id="contain">
-                    
-                </div>
-            </td><td style="width: 50%; vertical-align: top">
+                <div id="contain"></div>
+            </div>
+            <div>
                 <canvas id="keyb" width="600" height="120"></canvas>
-            </td></tr></table>
+            </div>
         </div>
-        <div style="border-top: 1px solid darkgrey; text-align: center; margin-top: 12pt; color: darkgray">
+        <div class="footer">
             Copyright 2023-2024 Naoki Kishida(<a href="https://twitter.com/kis">@kis</a>)
         </div>
         <script src="./drawtab.js"></script>
