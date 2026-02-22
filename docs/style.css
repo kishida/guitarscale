@@ -61,10 +61,67 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-/* Fretboard canvas */
+/* Add fretboard button */
 
-.fretboard {
+button {
+    padding: 5px 10px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background: white;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: #eee;
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* Fretboard container */
+
+#fretboards {
     margin: 20px 10px;
+}
+
+.fretboard-entry {
+    position: relative;
+    display: block;
+    margin-bottom: 10px;
+    cursor: grab;
+}
+
+.fretboard-entry.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+.fretboard-entry.drag-over {
+    outline: 2px dashed #888;
+    border-radius: 4px;
+}
+
+.fretboard-controls {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fretboard-remove,
+.fretboard-move {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
 }
 
 /* Info section: related scales + piano keyboard */

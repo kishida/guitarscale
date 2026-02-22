@@ -3,7 +3,7 @@
  2023 Naoki Kishida
  */
 
-function draw(name: string, notes: number[], k: number,
+function draw(canvas: HTMLCanvasElement, name: string, notes: number[], k: number,
         stringCount: number, tune: number[], note: boolean, chord: boolean) {
     function calcPos(f: number): number {
         return f * (55 - f / 1.7);
@@ -20,7 +20,6 @@ function draw(name: string, notes: number[], k: number,
         ["T", "2♭","2","3♭","3","4","5♭","5","6♭","6","7♭","7"]
     ];
 
-    const canvas = document.getElementById("canv") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
     const bottom = TOP + (stringCount - 1) * 20;
     ctx.fillStyle = "white";
@@ -132,7 +131,7 @@ function findNext(key: string, scale: number) {
     contain.innerHTML = "";
 
     const scaleNote = scales[scale][1];
-    
+
     if (scales[scale][2]) {
         //scale
         scaleHeader.textContent = "Scale next to";
@@ -219,7 +218,7 @@ for (const [idx, [val]] of tunes.entries()) {
     const opt = document.createElement("option") as HTMLOptionElement;
     opt.value = idx.toString();
     opt.text = val;
-    tune.appendChild(opt);    
+    tune.appendChild(opt);
 }
 
 const note = document.getElementById("note") as HTMLInputElement;
@@ -231,7 +230,7 @@ function drawKey(notes: number[], k: number) {
     const height = keyboard.height;
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, width, height);
-    
+
     const keys = 14;
     const keyWidth = width / keys;
     const offset = 3;
@@ -249,7 +248,7 @@ function drawKey(notes: number[], k: number) {
         if (((i + offset) % 7) == 2 || ((i + offset) % 7) == 6) continue;
       ctx.fillRect(i * keyWidth + keyWidth / 2 + gap, 0, keyWidth - 2 - gap * 2, height *2 / 3);
     }
-    
+
     for (let i = 0; i < keys * 2; ++i) {
         const m = keyMap[(i + offset * 2) % 14];
         if (m < 0) continue;
@@ -278,14 +277,116 @@ function drawKey(notes: number[], k: number) {
     }
 }
 
+const fretboardsContainer = document.getElementById("fretboards") as HTMLDivElement;
+const addFretboardBtn = document.getElementById("add-fretboard") as HTMLButtonElement;
+let fretboards: Array<{key: number, scale: number}> = [];
+let dragSrcIndex = -1;
+
+function renderFretboards() {
+    const sn = parseInt(strings.value);
+    const t = parseInt(tune.value);
+    const n = note.checked;
+
+    fretboardsContainer.innerHTML = "";
+
+    for (let i = 0; i < fretboards.length; i++) {
+        const entry = document.createElement("div");
+        entry.className = "fretboard-entry";
+        entry.draggable = true;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1050;
+        canvas.height = 250;
+        entry.appendChild(canvas);
+
+        const controlsDiv = document.createElement("div");
+        controlsDiv.className = "fretboard-controls";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "fretboard-remove";
+        removeBtn.textContent = "×";
+        removeBtn.disabled = fretboards.length <= 1;
+        removeBtn.onclick = () => {
+            fretboards.splice(i, 1);
+            renderFretboards();
+        };
+        controlsDiv.appendChild(removeBtn);
+
+        const upBtn = document.createElement("button");
+        upBtn.className = "fretboard-move";
+        upBtn.textContent = "▲";
+        upBtn.disabled = i === 0;
+        upBtn.onclick = () => {
+            [fretboards[i - 1], fretboards[i]] = [fretboards[i], fretboards[i - 1]];
+            renderFretboards();
+        };
+        controlsDiv.appendChild(upBtn);
+
+        const downBtn = document.createElement("button");
+        downBtn.className = "fretboard-move";
+        downBtn.textContent = "▼";
+        downBtn.disabled = i === fretboards.length - 1;
+        downBtn.onclick = () => {
+            [fretboards[i], fretboards[i + 1]] = [fretboards[i + 1], fretboards[i]];
+            renderFretboards();
+        };
+        controlsDiv.appendChild(downBtn);
+
+        entry.appendChild(controlsDiv);
+
+        entry.addEventListener("dragstart", (e) => {
+            dragSrcIndex = i;
+            entry.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+        });
+        entry.addEventListener("dragend", () => {
+            dragSrcIndex = -1;
+            for (const child of Array.from(fretboardsContainer.children)) {
+                child.classList.remove("dragging", "drag-over");
+            }
+        });
+        entry.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            for (const child of Array.from(fretboardsContainer.children)) {
+                child.classList.remove("drag-over");
+            }
+            if (dragSrcIndex !== i) {
+                entry.classList.add("drag-over");
+            }
+        });
+        entry.addEventListener("drop", (e) => {
+            e.preventDefault();
+            if (dragSrcIndex >= 0 && dragSrcIndex !== i) {
+                const [moved] = fretboards.splice(dragSrcIndex, 1);
+                fretboards.splice(i, 0, moved);
+                renderFretboards();
+            }
+        });
+
+        fretboardsContainer.appendChild(entry);
+
+        const fb = fretboards[i];
+        draw(canvas, keys[fb.key] + " " + scales[fb.scale][0], scales[fb.scale][1],
+            fb.key, sn, tunes[t][1], n, !scales[fb.scale][2]);
+    }
+
+    addFretboardBtn.disabled = fretboards.length >= 4;
+}
+
+addFretboardBtn.onclick = () => {
+    if (fretboards.length < 4) {
+        fretboards.push({ key: parseInt(key.value), scale: parseInt(scale.value) });
+        renderFretboards();
+    }
+};
+
 function repaint() {
     const k = parseInt(key.value);
     const s = parseInt(scale.value);
-    const sn= parseInt(strings.value);
-    const t = parseInt(tune.value);
-    const n = note.checked;
+    fretboards[0] = { key: k, scale: s };
     findNext(keys[k], s);
-    draw(keys[k] + " " + scales[s][0], scales[s][1], k, sn, tunes[t][1], n, !scales[s][2]);
+    renderFretboards();
     drawKey(scales[s][1], k);
 }
 

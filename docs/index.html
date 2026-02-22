@@ -38,15 +38,14 @@
         <div class="controls">
             <select id="key"></select>
             <select id="scale"></select>
+            <button id="add-fretboard">＋</button>
         </div>
         <div class="controls">
             <select id="strings"></select>
             <select id="tune"></select>
             <label><input id="note" type="checkbox" value="1">Note</label>
         </div>
-        <div class="fretboard">
-            <canvas id="canv" width="1050" height="250"></canvas>
-        </div>
+        <div id="fretboards"></div>
         <div class="info-section">
             <div>
                 <h2 id="scale-next">Scale next to</h2>
@@ -61,7 +60,7 @@
             </div>
         </div>
         <div class="footer">
-            Copyright 2023-2024 Naoki Kishida(<a href="https://twitter.com/kis">@kis</a>)
+            Copyright 2023-2026 Naoki Kishida(<a href="https://twitter.com/kis">@kis</a>)
         </div>
         <script src="./drawtab.js"></script>
     </body>

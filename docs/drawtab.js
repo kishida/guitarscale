@@ -1,8 +1,4 @@
-/**
- Guitar Scale Generator
- 2023 Naoki Kishida
- */
-function draw(name, notes, k, stringCount, tune, note, chord) {
+function draw(canvas, name, notes, k, stringCount, tune, note, chord) {
     function calcPos(f) {
         return f * (55 - f / 1.7);
     }
@@ -15,7 +11,6 @@ function draw(name, notes, k, stringCount, tune, note, chord) {
         ["T", "2♭", "2", "3♭", "3", "4", "4♯", "5", "6♭", "6", "7♭", "7"],
         ["T", "2♭", "2", "3♭", "3", "4", "5♭", "5", "6♭", "6", "7♭", "7"]
     ];
-    const canvas = document.getElementById("canv");
     const ctx = canvas.getContext("2d");
     const bottom = TOP + (stringCount - 1) * 20;
     ctx.fillStyle = "white";
@@ -41,7 +36,7 @@ function draw(name, notes, k, stringCount, tune, note, chord) {
     for (let p of marks) {
         ctx.fillText(p.toString(), calcCenter(p) + LEFT - 5, bottom + 30);
     }
-    const offset = 4 + 24 - k; // E
+    const offset = 4 + 24 - k;
     for (let i = 0; i < stringCount; i++) {
         const str = i + (stringCount < 6 ? 1 : 0);
         for (let pos = 0; pos <= 24; pos++) {
@@ -61,12 +56,12 @@ function draw(name, notes, k, stringCount, tune, note, chord) {
                         ctx.fillStyle = "black";
                         ctx.fill();
                         break;
-                    case 2: // root
+                    case 2:
                         ctx.fillStyle = "white";
                         ctx.fill();
                         ctx.stroke();
                         break;
-                    case 3: // blue note
+                    case 3:
                         ctx.fillStyle = "blue";
                         ctx.fill();
                         break;
@@ -122,7 +117,6 @@ function findNext(key, scale) {
     contain.innerHTML = "";
     const scaleNote = scales[scale][1];
     if (scales[scale][2]) {
-        //scale
         scaleHeader.textContent = "Scale next to";
         chordHeader.textContent = "Chord contained";
         OUTER: for (const [idx, [name, nextScale, isScale]] of scales.entries()) {
@@ -155,7 +149,6 @@ function findNext(key, scale) {
         }
     }
     else {
-        // chord
         scaleHeader.textContent = "Scale contains";
         chordHeader.textContent = "";
         OUTER: for (const [idx, [name, nextScale, isScale]] of scales.entries()) {
@@ -224,12 +217,10 @@ function drawKey(notes, k) {
     const keyWidth = width / keys;
     const offset = 3;
     const keyMap = [0, 1, 2, 3, 4, -1, 5, 6, 7, 8, 9, 10, 11, -1];
-    // draw white keys
     ctx.fillStyle = "white";
     for (let i = 0; i < keys; i++) {
         ctx.fillRect(i * keyWidth + 1, 0, keyWidth - 2, height - 2);
     }
-    // draw black keys
     ctx.fillStyle = "black";
     const gap = 5;
     for (let i = 0; i < keys; i++) {
@@ -268,14 +259,100 @@ function drawKey(notes, k) {
         }
     }
 }
-function repaint() {
-    const k = parseInt(key.value);
-    const s = parseInt(scale.value);
+const fretboardsContainer = document.getElementById("fretboards");
+const addFretboardBtn = document.getElementById("add-fretboard");
+let fretboards = [];
+let dragSrcIndex = -1;
+function renderFretboards() {
     const sn = parseInt(strings.value);
     const t = parseInt(tune.value);
     const n = note.checked;
+    fretboardsContainer.innerHTML = "";
+    for (let i = 0; i < fretboards.length; i++) {
+        const entry = document.createElement("div");
+        entry.className = "fretboard-entry";
+        entry.draggable = true;
+        const canvas = document.createElement("canvas");
+        canvas.width = 1050;
+        canvas.height = 250;
+        entry.appendChild(canvas);
+        const controlsDiv = document.createElement("div");
+        controlsDiv.className = "fretboard-controls";
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "fretboard-remove";
+        removeBtn.textContent = "×";
+        removeBtn.disabled = fretboards.length <= 1;
+        removeBtn.onclick = () => {
+            fretboards.splice(i, 1);
+            renderFretboards();
+        };
+        controlsDiv.appendChild(removeBtn);
+        const upBtn = document.createElement("button");
+        upBtn.className = "fretboard-move";
+        upBtn.textContent = "▲";
+        upBtn.disabled = i === 0;
+        upBtn.onclick = () => {
+            [fretboards[i - 1], fretboards[i]] = [fretboards[i], fretboards[i - 1]];
+            renderFretboards();
+        };
+        controlsDiv.appendChild(upBtn);
+        const downBtn = document.createElement("button");
+        downBtn.className = "fretboard-move";
+        downBtn.textContent = "▼";
+        downBtn.disabled = i === fretboards.length - 1;
+        downBtn.onclick = () => {
+            [fretboards[i], fretboards[i + 1]] = [fretboards[i + 1], fretboards[i]];
+            renderFretboards();
+        };
+        controlsDiv.appendChild(downBtn);
+        entry.appendChild(controlsDiv);
+        entry.addEventListener("dragstart", (e) => {
+            dragSrcIndex = i;
+            entry.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+        });
+        entry.addEventListener("dragend", () => {
+            dragSrcIndex = -1;
+            for (const child of Array.from(fretboardsContainer.children)) {
+                child.classList.remove("dragging", "drag-over");
+            }
+        });
+        entry.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            for (const child of Array.from(fretboardsContainer.children)) {
+                child.classList.remove("drag-over");
+            }
+            if (dragSrcIndex !== i) {
+                entry.classList.add("drag-over");
+            }
+        });
+        entry.addEventListener("drop", (e) => {
+            e.preventDefault();
+            if (dragSrcIndex >= 0 && dragSrcIndex !== i) {
+                const [moved] = fretboards.splice(dragSrcIndex, 1);
+                fretboards.splice(i, 0, moved);
+                renderFretboards();
+            }
+        });
+        fretboardsContainer.appendChild(entry);
+        const fb = fretboards[i];
+        draw(canvas, keys[fb.key] + " " + scales[fb.scale][0], scales[fb.scale][1], fb.key, sn, tunes[t][1], n, !scales[fb.scale][2]);
+    }
+    addFretboardBtn.disabled = fretboards.length >= 4;
+}
+addFretboardBtn.onclick = () => {
+    if (fretboards.length < 4) {
+        fretboards.push({ key: parseInt(key.value), scale: parseInt(scale.value) });
+        renderFretboards();
+    }
+};
+function repaint() {
+    const k = parseInt(key.value);
+    const s = parseInt(scale.value);
+    fretboards[0] = { key: k, scale: s };
     findNext(keys[k], s);
-    draw(keys[k] + " " + scales[s][0], scales[s][1], k, sn, tunes[t][1], n, !scales[s][2]);
+    renderFretboards();
     drawKey(scales[s][1], k);
 }
 const advanced = document.getElementById("advanced");
