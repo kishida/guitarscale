@@ -372,6 +372,7 @@ function renderFretboards() {
     }
 
     addFretboardBtn.disabled = fretboards.length >= 4;
+    updateUrl();
 }
 
 addFretboardBtn.onclick = () => {
@@ -407,6 +408,38 @@ function changeMode() {
     repaint();
 }
 
+const keyUrlNames = ["C", "Cs", "D", "Ds", "E", "F", "Fs", "G", "Gs", "A", "As", "B"];
+
+function scaleSlug(name: string): string {
+    return name.replace(/\s+/g, "_").replace(/♭/g, "b").replace(/♯/g, "s")
+               .replace(/\//g, "").replace(/[^a-zA-Z0-9_-]/g, "");
+}
+
+function fretboardToSlug(fb: {key: number, scale: number}): string {
+    return keyUrlNames[fb.key] + "-" + scaleSlug(scales[fb.scale][0]);
+}
+
+function parseFretboardSlug(slug: string): {key: number, scale: number} | null {
+    const dash = slug.indexOf("-");
+    if (dash < 0) return null;
+    const kidx = keyUrlNames.indexOf(slug.substring(0, dash));
+    if (kidx < 0) return null;
+    const scaleStr = slug.substring(dash + 1);
+    const sidx = scales.findIndex(([name]) => scaleSlug(name) === scaleStr);
+    if (sidx < 0) return null;
+    return { key: kidx, scale: sidx };
+}
+
+function updateUrl() {
+    if (fretboards.length === 0) return;
+    const params = new URLSearchParams();
+    params.set("fretboards", fretboards.map(fretboardToSlug).join(" "));
+    params.set("strings", strings.value);
+    params.set("tune", tune.value);
+    if (note.checked) params.set("note", "1");
+    history.replaceState(null, "", "?" + params.toString());
+}
+
 key.onchange = repaint;
 scale.onchange = repaint;
 strings.onchange = repaint;
@@ -415,4 +448,46 @@ note.onchange = repaint;
 advanced.onchange = changeMode;
 types.forEach(elm => elm.onchange = changeMode);
 
-changeMode();
+// URLパラメータ解析
+const urlParams = new URLSearchParams(window.location.search);
+const fretboardsParam = urlParams.get("fretboards");
+const stringsParam = urlParams.get("strings");
+const tuneParam = urlParams.get("tune");
+const noteParam = urlParams.get("note");
+
+// strings / tune / note を適用
+if (stringsParam) {
+    const v = parseInt(stringsParam);
+    if (v >= 4 && v <= 8) strings.value = v.toString();
+}
+if (tuneParam) {
+    const v = parseInt(tuneParam);
+    if (v >= 0 && v < tunes.length) tune.value = v.toString();
+}
+if (noteParam) note.checked = noteParam === "1";
+
+// fretboards を解析
+let urlFretboards: Array<{key: number, scale: number}> | null = null;
+if (fretboardsParam) {
+    const parsed = fretboardsParam.split(" ")
+        .map(parseFretboardSlug)
+        .filter((fb): fb is {key: number, scale: number} => fb !== null);
+    if (parsed.length > 0) urlFretboards = parsed;
+}
+
+// 1番目のフレットボードのスケール種別からtype/advancedを自動設定
+if (urlFretboards && urlFretboards.length > 0) {
+    const [, , isScale, isBasic] = scales[urlFretboards[0].scale];
+    if (!isBasic) advanced.checked = true;
+    types[isScale ? 0 : 1].checked = true;
+    key.value = urlFretboards[0].key.toString();
+}
+
+changeMode(); // スケールドロップダウンを構築してrepaint()呼び出し
+
+// URLフレットボードで上書き
+if (urlFretboards && urlFretboards.length > 0) {
+    fretboards = urlFretboards;
+    scale.value = fretboards[0].scale.toString();
+    repaint();
+}
