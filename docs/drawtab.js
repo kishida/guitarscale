@@ -404,6 +404,8 @@ function updateUrl() {
     if (note.checked)
         params.set("note", "1");
     history.replaceState(null, "", "?" + params.toString());
+    const titlePart = fretboards.map(fretboardToSlug).join("+").replace(/_/g, " ");
+    document.title = "Guitar Scale: " + titlePart;
 }
 key.onchange = repaint;
 scale.onchange = repaint;
