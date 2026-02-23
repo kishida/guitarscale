@@ -125,6 +125,11 @@ button:disabled {
     cursor: pointer;
 }
 
+.fretboard-move.active {
+    background: #f99;
+    border-color: #c44;
+}
+
 /* Info section: related scales + piano keyboard */
 
 .info-section {

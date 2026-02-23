@@ -14,7 +14,7 @@ function fretCenterX(pos: number): number {
 
 function draw(canvas: HTMLCanvasElement, name: string, notes: number[], k: number,
         stringCount: number, tune: number[], note: boolean, chord: boolean,
-        highlights: Set<string>) {
+        highlights: Set<string>, hideNonHighlight: boolean) {
     function calcPos(f: number): number {
         return f * (55 - f / 1.7);
     }
@@ -65,6 +65,7 @@ function draw(canvas: HTMLCanvasElement, name: string, notes: number[], k: numbe
             const noteNum = (tune[str] + pos + offset) % 12;
             const flag = notes[noteNum];
             if (flag == 0) continue;
+            if (hideNonHighlight && !highlights.has(`${i}_${pos}`)) continue;
             const x = calcCenter(pos) + LEFT + (pos == 0 ? 14 : 0);
             if (note) {
                 ctx.fillText(noteName[chord ? 1 : 0][noteNum], x - 3, TOP+ 5 + i * 20);
@@ -310,7 +311,7 @@ function drawKey(notes: number[], k: number) {
 
 const fretboardsContainer = document.getElementById("fretboards") as HTMLDivElement;
 const addFretboardBtn = document.getElementById("add-fretboard") as HTMLButtonElement;
-let fretboards: Array<{key: number, scale: number, highlights: Set<string>}> = [];
+let fretboards: Array<{key: number, scale: number, highlights: Set<string>, hideNonHighlight: boolean}> = [];
 let dragSrcIndex = -1;
 
 function encodeHighlights(fbs: Array<{highlights: Set<string>}>): string {
@@ -408,11 +409,22 @@ function renderFretboards() {
         };
         controlsDiv.appendChild(downBtn);
 
+        const hideBtn = document.createElement("button");
+        hideBtn.className = "fretboard-move" + (fretboards[i].hideNonHighlight ? " active" : "");
+        hideBtn.textContent = "🚫";
+        hideBtn.title = "Hide non-highlighted positions";
+        hideBtn.style.marginTop = "8px";
+        hideBtn.onclick = () => {
+            fretboards[i].hideNonHighlight = !fretboards[i].hideNonHighlight;
+            renderFretboards();
+        };
+        controlsDiv.appendChild(hideBtn);
+
         const resetBtn = document.createElement("button");
         resetBtn.className = "fretboard-move";
         resetBtn.textContent = "↺";
         resetBtn.title = "Clear highlights";
-        resetBtn.style.marginTop = "8px";
+        resetBtn.style.marginTop = "4px";
         resetBtn.onclick = () => {
             fretboards[i].highlights = new Set<string>();
             renderFretboards();
@@ -483,7 +495,7 @@ function renderFretboards() {
             }
 
             draw(canvas, displayName(fb.key, fb.scale), scales[fb.scale][1],
-                fb.key, sn, tunes[t][1], n, !scales[fb.scale][2], fb.highlights);
+                fb.key, sn, tunes[t][1], n, !scales[fb.scale][2], fb.highlights, fb.hideNonHighlight);
             updateUrl();
         });
 
@@ -491,7 +503,7 @@ function renderFretboards() {
 
         const fb = fretboards[i];
         draw(canvas, displayName(fb.key, fb.scale), scales[fb.scale][1],
-            fb.key, sn, tunes[t][1], n, !scales[fb.scale][2], fb.highlights);
+            fb.key, sn, tunes[t][1], n, !scales[fb.scale][2], fb.highlights, fb.hideNonHighlight);
     }
 
     addFretboardBtn.disabled = fretboards.length >= 5;
@@ -501,8 +513,9 @@ function renderFretboards() {
 addFretboardBtn.onclick = () => {
     if (fretboards.length < 5) {
         const copiedHighlights = new Set<string>(fretboards[0].highlights);
-        fretboards.push({ key: parseInt(key.value), scale: parseInt(scale.value), highlights: copiedHighlights });
+        fretboards.push({ key: parseInt(key.value), scale: parseInt(scale.value), highlights: copiedHighlights, hideNonHighlight: fretboards[0].hideNonHighlight });
         fretboards[0].highlights = new Set<string>();
+        fretboards[0].hideNonHighlight = false;
         renderFretboards();
     }
 };
@@ -510,7 +523,7 @@ addFretboardBtn.onclick = () => {
 function repaint() {
     const k = parseInt(key.value);
     const s = parseInt(scale.value);
-    fretboards[0] = { key: k, scale: s, highlights: fretboards[0]?.highlights ?? new Set<string>() };
+    fretboards[0] = { key: k, scale: s, highlights: fretboards[0]?.highlights ?? new Set<string>(), hideNonHighlight: fretboards[0]?.hideNonHighlight ?? false };
     findNext(k, s);
     renderFretboards();
     drawKey(scales[s][1], k);
@@ -577,6 +590,8 @@ function updateUrl() {
     if (note.checked) params.set("note", "1");
     const hlEncoded = encodeHighlights(fretboards);
     if (hlEncoded) params.set("highlights", hlEncoded);
+    const hideEncoded = fretboards.map((fb, i) => fb.hideNonHighlight ? (i + 1).toString() : "").join("");
+    if (hideEncoded) params.set("hide", hideEncoded);
     history.replaceState(null, "", "?" + params.toString());
     const titlePart = fretboards.map(fb => displayName(fb.key, fb.scale)).join("+");
     const t = parseInt(tune.value);
@@ -601,6 +616,7 @@ const stringsParam = urlParams.get("strings");
 const tuneParam = urlParams.get("tune");
 const noteParam = urlParams.get("note");
 const highlightsParam = urlParams.get("highlights");
+const hideParam = urlParams.get("hide");
 
 // strings / tune / note を適用
 if (stringsParam) {
@@ -635,7 +651,7 @@ changeMode(); // スケールドロップダウンを構築してrepaint()呼び
 // URLフレットボードで上書き
 if (urlFretboards && urlFretboards.length > 0) {
     const hlSets = decodeHighlights(highlightsParam ?? "", urlFretboards.length);
-    fretboards = urlFretboards.map((fb, idx) => ({ ...fb, highlights: hlSets[idx] }));
+    fretboards = urlFretboards.map((fb, idx) => ({ ...fb, highlights: hlSets[idx], hideNonHighlight: (hideParam ?? "").includes((idx + 1).toString()) }));
     scale.value = fretboards[0].scale.toString();
     repaint();
 }
