@@ -3,8 +3,18 @@
  2023 Naoki Kishida
  */
 
+// Module-level geometry constants (same formulas as in draw())
+const FRET_LEFT = 25;
+const STRING_TOP = 40;
+function fretCalcPos(f: number): number { return f * (55 - f / 1.7); }
+function fretCalcCenter(f: number): number { return (fretCalcPos(f) + fretCalcPos(f - 1)) / 2; }
+function fretCenterX(pos: number): number {
+    return fretCalcCenter(pos) + FRET_LEFT + (pos === 0 ? 14 : 0);
+}
+
 function draw(canvas: HTMLCanvasElement, name: string, notes: number[], k: number,
-        stringCount: number, tune: number[], note: boolean, chord: boolean) {
+        stringCount: number, tune: number[], note: boolean, chord: boolean,
+        highlights: Set<string>) {
     function calcPos(f: number): number {
         return f * (55 - f / 1.7);
     }
@@ -78,6 +88,20 @@ function draw(canvas: HTMLCanvasElement, name: string, notes: number[], k: numbe
                 }
             }
         }
+    }
+
+    // Draw highlights
+    ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
+    for (const h of highlights) {
+        const parts = h.split("_");
+        const strIdx = parseInt(parts[0]);
+        const fretIdx = parseInt(parts[1]);
+        if (strIdx >= stringCount) continue;
+        const x = calcCenter(fretIdx) + LEFT + (fretIdx === 0 ? 14 : 0);
+        const y = TOP + strIdx * 20;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2, true);
+        ctx.fill();
     }
 }
 
@@ -286,8 +310,51 @@ function drawKey(notes: number[], k: number) {
 
 const fretboardsContainer = document.getElementById("fretboards") as HTMLDivElement;
 const addFretboardBtn = document.getElementById("add-fretboard") as HTMLButtonElement;
-let fretboards: Array<{key: number, scale: number}> = [];
+let fretboards: Array<{key: number, scale: number, highlights: Set<string>}> = [];
 let dragSrcIndex = -1;
+
+function encodeHighlights(fbs: Array<{highlights: Set<string>}>): string {
+    const parts: string[] = [];
+    for (let i = 0; i < fbs.length; i++) {
+        if (fbs[i].highlights.size === 0) continue;
+        let s = `fb${i + 1}`;
+        const sorted = Array.from(fbs[i].highlights).sort((a, b) => {
+            const [as2, af] = a.split("_").map(Number);
+            const [bs2, bf] = b.split("_").map(Number);
+            return as2 !== bs2 ? as2 - bs2 : af - bf;
+        });
+        for (const hkey of sorted) {
+            const [strIdx, fretIdx] = hkey.split("_").map(Number);
+            // string: 1-8 (strIdx+1 encoded as char '1'-'8')
+            // fret:   0-24 encoded as 'a'-'y'
+            s += String.fromCharCode("1".charCodeAt(0) + strIdx);
+            s += String.fromCharCode("a".charCodeAt(0) + fretIdx);
+        }
+        parts.push(s);
+    }
+    return parts.join("+");
+}
+
+function decodeHighlights(encoded: string, count: number): Set<string>[] {
+    const result: Set<string>[] = Array.from({length: count}, () => new Set<string>());
+    if (!encoded) return result;
+    const parts = encoded.split("+");
+    for (const part of parts) {
+        const match = part.match(/^fb([1-5])(.*)$/);
+        if (!match) continue;
+        const fbIdx = parseInt(match[1]) - 1;
+        if (fbIdx < 0 || fbIdx >= count) continue;
+        const pairs = match[2];
+        for (let j = 0; j + 1 < pairs.length; j += 2) {
+            const strIdx = pairs.charCodeAt(j) - "1".charCodeAt(0);
+            const fretIdx = pairs.charCodeAt(j + 1) - "a".charCodeAt(0);
+            if (strIdx >= 0 && strIdx < 8 && fretIdx >= 0 && fretIdx <= 24) {
+                result[fbIdx].add(`${strIdx}_${fretIdx}`);
+            }
+        }
+    }
+    return result;
+}
 
 function renderFretboards() {
     const sn = parseInt(strings.value);
@@ -304,6 +371,7 @@ function renderFretboards() {
         const canvas = document.createElement("canvas");
         canvas.width = 1050;
         canvas.height = 250;
+        canvas.style.cursor = "crosshair";
         entry.appendChild(canvas);
 
         const controlsDiv = document.createElement("div");
@@ -323,6 +391,7 @@ function renderFretboards() {
         upBtn.className = "fretboard-move";
         upBtn.textContent = "▲";
         upBtn.disabled = i === 0;
+        upBtn.style.marginTop = "8px";
         upBtn.onclick = () => {
             [fretboards[i - 1], fretboards[i]] = [fretboards[i], fretboards[i - 1]];
             renderFretboards();
@@ -338,6 +407,17 @@ function renderFretboards() {
             renderFretboards();
         };
         controlsDiv.appendChild(downBtn);
+
+        const resetBtn = document.createElement("button");
+        resetBtn.className = "fretboard-move";
+        resetBtn.textContent = "↺";
+        resetBtn.title = "Clear highlights";
+        resetBtn.style.marginTop = "8px";
+        resetBtn.onclick = () => {
+            fretboards[i].highlights = new Set<string>();
+            renderFretboards();
+        };
+        controlsDiv.appendChild(resetBtn);
 
         entry.appendChild(controlsDiv);
 
@@ -371,20 +451,58 @@ function renderFretboards() {
             }
         });
 
+        // Click to toggle highlight
+        canvas.addEventListener("click", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const cx = (e.clientX - rect.left) * scaleX;
+            const cy = (e.clientY - rect.top) * scaleY;
+
+            const stringIdx = Math.round((cy - STRING_TOP) / 20);
+            if (stringIdx < 0 || stringIdx >= sn) return;
+
+            let nearestFret = -1;
+            let minDist = Infinity;
+            for (let pos = 0; pos <= 24; pos++) {
+                const fx = fretCenterX(pos);
+                const dist = Math.abs(cx - fx);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearestFret = pos;
+                }
+            }
+            if (nearestFret < 0 || minDist > 25) return;
+
+            const hkey = `${stringIdx}_${nearestFret}`;
+            const fb = fretboards[i];
+            if (fb.highlights.has(hkey)) {
+                fb.highlights.delete(hkey);
+            } else {
+                fb.highlights.add(hkey);
+            }
+
+            draw(canvas, displayName(fb.key, fb.scale), scales[fb.scale][1],
+                fb.key, sn, tunes[t][1], n, !scales[fb.scale][2], fb.highlights);
+            updateUrl();
+        });
+
         fretboardsContainer.appendChild(entry);
 
         const fb = fretboards[i];
         draw(canvas, displayName(fb.key, fb.scale), scales[fb.scale][1],
-            fb.key, sn, tunes[t][1], n, !scales[fb.scale][2]);
+            fb.key, sn, tunes[t][1], n, !scales[fb.scale][2], fb.highlights);
     }
 
-    addFretboardBtn.disabled = fretboards.length >= 4;
+    addFretboardBtn.disabled = fretboards.length >= 5;
     updateUrl();
 }
 
 addFretboardBtn.onclick = () => {
-    if (fretboards.length < 4) {
-        fretboards.push({ key: parseInt(key.value), scale: parseInt(scale.value) });
+    if (fretboards.length < 5) {
+        const copiedHighlights = new Set<string>(fretboards[0].highlights);
+        fretboards.push({ key: parseInt(key.value), scale: parseInt(scale.value), highlights: copiedHighlights });
+        fretboards[0].highlights = new Set<string>();
         renderFretboards();
     }
 };
@@ -392,7 +510,7 @@ addFretboardBtn.onclick = () => {
 function repaint() {
     const k = parseInt(key.value);
     const s = parseInt(scale.value);
-    fretboards[0] = { key: k, scale: s };
+    fretboards[0] = { key: k, scale: s, highlights: fretboards[0]?.highlights ?? new Set<string>() };
     findNext(k, s);
     renderFretboards();
     drawKey(scales[s][1], k);
@@ -457,6 +575,8 @@ function updateUrl() {
     params.set("strings", strings.value);
     params.set("tune", tune.value);
     if (note.checked) params.set("note", "1");
+    const hlEncoded = encodeHighlights(fretboards);
+    if (hlEncoded) params.set("highlights", hlEncoded);
     history.replaceState(null, "", "?" + params.toString());
     const titlePart = fretboards.map(fb => displayName(fb.key, fb.scale)).join("+");
     const t = parseInt(tune.value);
@@ -480,6 +600,7 @@ const fretboardsParam = urlParams.get("fretboards");
 const stringsParam = urlParams.get("strings");
 const tuneParam = urlParams.get("tune");
 const noteParam = urlParams.get("note");
+const highlightsParam = urlParams.get("highlights");
 
 // strings / tune / note を適用
 if (stringsParam) {
@@ -513,7 +634,8 @@ changeMode(); // スケールドロップダウンを構築してrepaint()呼び
 
 // URLフレットボードで上書き
 if (urlFretboards && urlFretboards.length > 0) {
-    fretboards = urlFretboards;
+    const hlSets = decodeHighlights(highlightsParam ?? "", urlFretboards.length);
+    fretboards = urlFretboards.map((fb, idx) => ({ ...fb, highlights: hlSets[idx] }));
     scale.value = fretboards[0].scale.toString();
     repaint();
 }
