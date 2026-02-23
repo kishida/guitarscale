@@ -91,42 +91,48 @@ for (const [idx, val] of keys.entries()) {
     key.appendChild(opt);
 }
 
-const scales: [string, number[], boolean /*scale*/, boolean /*basic*/][] = [
-    ["Major",         [2,0,1,0,1,1,0,1,0,1,0,1], true, true],
-    ["Minor",         [2,0,1,1,0,1,0,1,1,0,1,0], true, true],
-    ["Major Penta",   [2,0,1,0,1,0,0,1,0,1,0,0], true, true],
-    ["Minor Penta",   [2,0,0,1,0,1,0,1,0,0,1,0], true, true],
-    ["Major Blues",   [2,0,1,3,1,0,0,1,0,1,0,0], true, false],
-    ["Minor Blues",   [2,0,0,1,0,1,3,1,0,0,1,0], true, false],
-    ["Harmonic Minor",[2,0,1,1,0,1,0,1,1,0,0,1], true, true],
-    ["Melodic Minor", [2,0,1,1,0,1,0,1,0,1,0,1], true, false],
-    ["Dorian",        [2,0,1,1,0,1,0,1,0,1,1,0], true, true],
-    ["Phrygian",      [2,1,0,1,0,1,0,1,1,0,1,0], true, false],
-    ["Lydian",        [2,0,1,0,1,0,1,1,0,1,0,1], true, true],
-    ["Lydian 7th",    [2,0,1,0,1,0,1,1,0,1,1,0], true, false],
-    ["Mixolydian",    [2,0,1,0,1,1,0,1,0,1,1,0], true, true],
-    ["Locrian",       [2,1,0,1,0,1,1,0,1,0,1,0], true, false],
-    ["Diminish Scale",[2,0,1,1,0,1,1,0,1,1,0,1], true, false],
-    ["Con-Diminish",  [2,1,0,1,1,0,1,1,0,1,1,0], true, false],
-    ["Altered",       [2,1,0,1,1,0,1,0,1,0,1,0], true, false],
-    ["Whole tone",    [2,0,1,0,1,0,1,0,1,0,1,0], true, false],
-    ["Major Triad",   [2,0,0,0,1,0,0,1,0,0,0,0], false, true],
-    ["Minor Triad",   [2,0,0,1,0,0,0,1,0,0,0,0], false, true],
-    ["Major 7th",     [2,0,0,0,1,0,0,1,0,0,0,1], false, true],
-    ["Dominant 7th",  [2,0,0,0,1,0,0,1,0,0,1,0], false, true],
-    ["Minor 7th",     [2,0,0,1,0,0,0,1,0,0,1,0], false, true],
-    ["Minor 7th♭5",  [2,0,0,1,0,0,1,0,0,0,1,0], false, true],
-    ["Minor M7th",    [2,0,0,1,0,0,0,1,0,0,0,1], false, true],
-    ["Diminish",      [2,0,0,1,0,0,1,0,0,1,0,0], false, false],
-    ["Augument",      [2,0,0,0,1,0,0,0,1,0,0,0], false, false],
-    ["Augument 7th",  [2,0,0,0,1,0,0,0,1,0,1,0], false, false],
+const scales: [string, number[], boolean /*scale*/, boolean /*basic*/, string][] = [
+    ["Major",         [2,0,1,0,1,1,0,1,0,1,0,1], true, true,  ""],
+    ["Minor",         [2,0,1,1,0,1,0,1,1,0,1,0], true, true,  ""],
+    ["Major Penta",   [2,0,1,0,1,0,0,1,0,1,0,0], true, true,  ""],
+    ["Minor Penta",   [2,0,0,1,0,1,0,1,0,0,1,0], true, true,  ""],
+    ["Major Blues",   [2,0,1,3,1,0,0,1,0,1,0,0], true, false, ""],
+    ["Minor Blues",   [2,0,0,1,0,1,3,1,0,0,1,0], true, false, ""],
+    ["Harmonic Minor",[2,0,1,1,0,1,0,1,1,0,0,1], true, true,  ""],
+    ["Melodic Minor", [2,0,1,1,0,1,0,1,0,1,0,1], true, false, ""],
+    ["Dorian",        [2,0,1,1,0,1,0,1,0,1,1,0], true, true,  ""],
+    ["Phrygian",      [2,1,0,1,0,1,0,1,1,0,1,0], true, false, ""],
+    ["Lydian",        [2,0,1,0,1,0,1,1,0,1,0,1], true, true,  ""],
+    ["Lydian 7th",    [2,0,1,0,1,0,1,1,0,1,1,0], true, false, ""],
+    ["Mixolydian",    [2,0,1,0,1,1,0,1,0,1,1,0], true, true,  ""],
+    ["Locrian",       [2,1,0,1,0,1,1,0,1,0,1,0], true, false, ""],
+    ["Diminish Scale",[2,0,1,1,0,1,1,0,1,1,0,1], true, false, ""],
+    ["Con-Diminish",  [2,1,0,1,1,0,1,1,0,1,1,0], true, false, ""],
+    ["Altered",       [2,1,0,1,1,0,1,0,1,0,1,0], true, false, ""],
+    ["Whole tone",    [2,0,1,0,1,0,1,0,1,0,1,0], true, false, ""],
+    ["Major Triad",   [2,0,0,0,1,0,0,1,0,0,0,0], false, true, ""],
+    ["Minor Triad",   [2,0,0,1,0,0,0,1,0,0,0,0], false, true, "m"],
+    ["Major 7th",     [2,0,0,0,1,0,0,1,0,0,0,1], false, true, "maj7"],
+    ["Dominant 7th",  [2,0,0,0,1,0,0,1,0,0,1,0], false, true, "7"],
+    ["Minor 7th",     [2,0,0,1,0,0,0,1,0,0,1,0], false, true, "m7"],
+    ["Minor 7th♭5",  [2,0,0,1,0,0,1,0,0,0,1,0], false, true, "m7♭5"],
+    ["Minor M7th",    [2,0,0,1,0,0,0,1,0,0,0,1], false, true, "mM7"],
+    ["Diminish",      [2,0,0,1,0,0,1,0,0,1,0,0], false, false,"dim"],
+    ["Augument",      [2,0,0,0,1,0,0,0,1,0,0,0], false, false,"aug"],
+    ["Augument 7th",  [2,0,0,0,1,0,0,0,1,0,1,0], false, false,"aug7"],
 ];
 
 const next = document.getElementById("next") as HTMLDivElement;
 const contain = document.getElementById("contain") as HTMLDivElement;
 const scaleHeader = document.getElementById("scale-next") as HTMLHeadElement;
 const chordHeader = document.getElementById("chord-contained") as HTMLHeadElement;
-function findNext(key: string, scale: number) {
+function displayName(keyIdx: number, scaleIdx: number): string {
+    const [name, , isScale, , suffix] = scales[scaleIdx];
+    if (isScale) return keys[keyIdx] + " " + name;
+    return keys[keyIdx] + suffix;
+}
+
+function findNext(keyIdx: number, scale: number) {
     next.innerHTML = "";
     contain.innerHTML = "";
 
@@ -148,7 +154,7 @@ function findNext(key: string, scale: number) {
                 }
             }
             const row = document.createElement("div") as HTMLDivElement;
-            row.innerHTML = key + " " + name;
+            row.innerHTML = displayName(keyIdx, idx);
             next.appendChild(row);
         }
 
@@ -160,7 +166,7 @@ function findNext(key: string, scale: number) {
                 }
             }
             const row = document.createElement("div") as HTMLDivElement;
-            row.innerHTML = key + " " + name;
+            row.innerHTML = displayName(keyIdx, idx);
             contain.appendChild(row);
         }
     } else {
@@ -175,7 +181,7 @@ function findNext(key: string, scale: number) {
                 }
             }
             const row = document.createElement("div") as HTMLDivElement;
-            row.innerHTML = key + " " + name;
+            row.innerHTML = displayName(keyIdx, idx);
             next.appendChild(row);
         }
     }
@@ -183,16 +189,17 @@ function findNext(key: string, scale: number) {
 
 const scale = document.getElementById("scale") as HTMLSelectElement;
 function scaleSelection(mode: number, adv: boolean) {
+    const kidx = parseInt(key.value);
     const sel = scale.value;
     scale.innerHTML = "";
-    for (const [idx, [val, ,sc, basic]] of scales.entries()) {
+    for (const [idx, [val, , sc, basic, suffix]] of scales.entries()) {
         if (mode != 2) {
             if (mode == 0 !== sc) continue;
         }
         if (!adv && !basic) continue;
         const opt = document.createElement("option") as HTMLOptionElement;
         opt.value = idx.toString();
-        opt.text = val;
+        opt.text = sc ? val : (keys[kidx] + suffix);
         if (idx.toString() === sel) opt.selected = true;
         scale.appendChild(opt);
     }
@@ -367,7 +374,7 @@ function renderFretboards() {
         fretboardsContainer.appendChild(entry);
 
         const fb = fretboards[i];
-        draw(canvas, keys[fb.key] + " " + scales[fb.scale][0], scales[fb.scale][1],
+        draw(canvas, displayName(fb.key, fb.scale), scales[fb.scale][1],
             fb.key, sn, tunes[t][1], n, !scales[fb.scale][2]);
     }
 
@@ -386,7 +393,7 @@ function repaint() {
     const k = parseInt(key.value);
     const s = parseInt(scale.value);
     fretboards[0] = { key: k, scale: s };
-    findNext(keys[k], s);
+    findNext(k, s);
     renderFretboards();
     drawKey(scales[s][1], k);
 }
@@ -415,17 +422,30 @@ function scaleSlug(name: string): string {
                .replace(/\//g, "").replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
+function chordSuffix(scaleIdx: number): string {
+    const [, , , , suffix] = scales[scaleIdx];
+    return suffix.replace(/♭/g, "b").replace(/♯/g, "s");
+}
+
 function fretboardToSlug(fb: {key: number, scale: number}): string {
-    return keyUrlNames[fb.key] + "-" + scaleSlug(scales[fb.scale][0]);
+    const [name, , isScale] = scales[fb.scale];
+    const keySlug = keyUrlNames[fb.key];
+    if (isScale) return keySlug + scaleSlug(name);
+    return keySlug + chordSuffix(fb.scale);
 }
 
 function parseFretboardSlug(slug: string): {key: number, scale: number} | null {
-    const dash = slug.indexOf("-");
-    if (dash < 0) return null;
-    const kidx = keyUrlNames.indexOf(slug.substring(0, dash));
-    if (kidx < 0) return null;
-    const scaleStr = slug.substring(dash + 1);
-    const sidx = scales.findIndex(([name]) => scaleSlug(name) === scaleStr);
+    // キースラッグは1〜2文字 (Cs, Ds, Fs, Gs, As が2文字)
+    let kidx = keyUrlNames.indexOf(slug.substring(0, 2));
+    let scaleStr = slug.substring(2);
+    if (kidx < 0) {
+        kidx = keyUrlNames.indexOf(slug.substring(0, 1));
+        if (kidx < 0) return null;
+        scaleStr = slug.substring(1);
+    }
+    const sidx = scales.findIndex(([name, , isScale, , suffix]) =>
+        isScale ? scaleSlug(name) === scaleStr
+                : suffix.replace(/♭/g, "b").replace(/♯/g, "s") === scaleStr);
     if (sidx < 0) return null;
     return { key: kidx, scale: sidx };
 }
@@ -438,11 +458,15 @@ function updateUrl() {
     params.set("tune", tune.value);
     if (note.checked) params.set("note", "1");
     history.replaceState(null, "", "?" + params.toString());
-    const titlePart = fretboards.map(fretboardToSlug).join("+").replace(/_/g, " ");
-    document.title = "Guitar Scale: " + titlePart;
+    const titlePart = fretboards.map(fb => displayName(fb.key, fb.scale)).join("+");
+    const t = parseInt(tune.value);
+    const tuneLabel = t !== 0 ? " [" + tunes[t][0] + "]" : "";
+    document.title = "Guitar Scale: " + titlePart + tuneLabel;
+    (document.getElementById("header") as HTMLHeadingElement).textContent =
+        "Guitar Scale Generator" + tuneLabel;
 }
 
-key.onchange = repaint;
+key.onchange = changeMode;
 scale.onchange = repaint;
 strings.onchange = repaint;
 tune.onchange = repaint;
